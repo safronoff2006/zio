@@ -4,7 +4,7 @@ import zio.stream._
 
 import scala.language.postfixOps
 
-object MyApp extends ZIOAppDefault {
+object MyApp_Concurrency extends ZIOAppDefault {
 
   def run: ZIO[Any, Throwable, Unit] = myAppLogic
 
