@@ -6,7 +6,7 @@ import scala.concurrent.Future
 import scala.io.StdIn
 import scala.util.Try
 
-object MyApp extends ZIOAppDefault {
+object MyApp_CreateEffects_Consol extends ZIOAppDefault {
 
   def run: ZIO[Any, Throwable, Unit] = myAppLogic
 

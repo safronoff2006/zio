@@ -5,7 +5,7 @@ import java.io.{FileNotFoundException, IOException}
 import scala.io.Source._
 import scala.language.postfixOps
 
-object MyApp extends ZIOAppDefault {
+object MyApp_ManageErrors extends ZIOAppDefault {
 
   def run: ZIO[Any, Throwable, Unit] = myAppLogic
 
