@@ -13,7 +13,7 @@ scalaVersion := "2.13.14"
 
 // It's possible to define many kinds of settings, such as:
 
-name := "zio_3"
+name := "MyApp_ManageResources"
 organization := "safronoff2006"
 version := "1.0"
 

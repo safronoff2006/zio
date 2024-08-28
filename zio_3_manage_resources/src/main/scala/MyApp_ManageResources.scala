@@ -7,7 +7,7 @@ import scala.io.Source.fromFile
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.language.postfixOps
 
-object MyApp extends ZIOAppDefault {
+object MyApp_ManageResources extends ZIOAppDefault {
 
 
 
