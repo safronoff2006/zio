@@ -1,7 +1,7 @@
 
 // The simplest possible sbt build file is just one line:
 
-scalaVersion := "2.13.12"
+scalaVersion := "2.13.14"
 // That is, to create a valid sbt build, all you've got to do is define the
 // version of Scala you'd like your project to use.
 
@@ -13,8 +13,8 @@ scalaVersion := "2.13.12"
 
 // It's possible to define many kinds of settings, such as:
 
-name := "hello-world"
-organization := "ch.epfl.scala"
+name := "Main_DI"
+organization := "safronoff2006"
 version := "1.0"
 
 // Note, it's not required for you to define these three settings. These are
@@ -26,6 +26,13 @@ version := "1.0"
 // You can define other libraries as dependencies in your build like this:
 
 libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "2.3.0"
+libraryDependencies += "dev.zio" %% "zio" % "2.1.7"
+libraryDependencies += "dev.zio" %% "zio-streams" % "2.1.7"
+libraryDependencies += "dev.zio" %% "zio-macros" % "2.1.7"
+
+
+
+scalacOptions += "-Ymacro-annotations"
 
 // Here, `libraryDependencies` is a set of dependencies, and by using `+=`,
 // we're adding the scala-parser-combinators dependency to the set of dependencies
