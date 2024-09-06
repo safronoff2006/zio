@@ -6,7 +6,7 @@ import java.io.IOException
 object Main_DI extends ZIOAppDefault {
   private val app = for {
     _ <- printLine("Изучаем ZIO")
-    _ <- printLine("Инверсия управления. Внедрение зависимостей. ZEnvironment.")
+    _ <- printLine("Инверсия управления. Внедрение зависимостей. ZEnvironment. Конструкторы. ZLayer.")
     _ <- printLine("")
     _ <- part1_inversion
     - <- part2_вecoupling_from_шmplementations
