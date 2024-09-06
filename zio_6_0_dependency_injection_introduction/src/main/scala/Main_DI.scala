@@ -1,6 +1,8 @@
 import zio.Console._
 import zio._
 
+import java.io.IOException
+
 object Main_DI extends ZIOAppDefault {
   private val app = for {
     _ <- printLine("Изучаем ZIO")
@@ -10,6 +12,9 @@ object Main_DI extends ZIOAppDefault {
     - <- part2_вecoupling_from_шmplementations
     _ <- part3_binding_interfaces_to_implementations
     - <- part4_effectful_constructors
+    _ <- part4_workflow_1
+    _ <- part4_workflow_2
+    _ <- part4_workflow_3
     _ <- printLine("---------------------")
   } yield ()
 
@@ -177,12 +182,40 @@ object Main_DI extends ZIOAppDefault {
   }
 
 
-  val part4_effectful_constructors = for {
+  val part4_effectful_constructors: ZIO[Scope, IOException, Unit] = for {
     _ <- printLine("Part4_Effectful_Constructors - эффективные конструкторы")
     environment = ((Formatter_3.layer ++ Compiler_3.layer ++ CounterLive.layer) >>> EditorLive.layer).build
     editor <- environment.map(_.get[Editor])
     _ <- editor.formatAndCompile("Data + count").flatMap(str => printLine(str))
     _ <- printLine("------\n")
   } yield ()
+
+  val part4_workflow_1: ZIO[Scope, IOException, Unit] = for {
+    _ <- printLine("Part4_workflow_1")
+    env <-  (Formatter_3.layer ++ Compiler_3.layer ++ CounterLive.layer ).build
+    form <- env.get[Formatter].format("Data")
+    comp <- env.get[Compiler].compile(form)
+    counter = env.get[Counter]
+    _ <- ZIO.foreachDiscard(1 to 10){ _ => counter.inc }
+    cou <- counter.get.flatMap(cou =>  ZIO.succeed(cou.toString))
+    _ <- printLine(s"$comp Count: $cou")
+    _ <- printLine("------\n")
+  } yield ()
+
+  val workflow_2: ZIO[Counter with Compiler with Formatter, IOException, Unit] = for {
+    _ <- printLine("Part4_workflow_2")
+    formatter <- ZIO.service[Formatter]
+    compiler  <- ZIO.service[Compiler]
+    counter <- ZIO.service[Counter]
+    _ <- ZIO.foreachDiscard(1 to 100) {_ => counter.inc}
+    form <- formatter.format("D a t a")
+    comp <- compiler.compile(form)
+    count <- counter.get
+    _ <- printLine(s"$comp  Count: $count")
+    _ <- printLine("------\n")
+  } yield ()
+
+  val part4_workflow_2: IO[IOException, Unit] = workflow_2.provideLayer(Formatter_3.layer ++ Compiler_3.layer ++ CounterLive.layer)
+  val part4_workflow_3: IO[IOException, Unit] = workflow_2.provide(Formatter_3.layer, Compiler_3.layer, CounterLive.layer)
 }
 
