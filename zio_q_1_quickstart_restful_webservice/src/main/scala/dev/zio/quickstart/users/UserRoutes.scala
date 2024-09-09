@@ -13,7 +13,7 @@ object UserRoutes:
   def apply(): Routes[UserRepo, Response] =
     Routes(
       // POST /users -d '{"name": "John", "age": 35}'
-      Method.POST / "users" -> handler { (req: Request) =>
+     Method.POST / "users" -> handler { (req: Request) =>
         for {
           u <- req.body.to[User].orElseFail(Response.badRequest)
           r <-
