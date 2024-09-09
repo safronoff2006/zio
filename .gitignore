@@ -2,4 +2,5 @@
 /zio*/.idea/
 /zio*/target/
 /zio*/project/
+*mv.db
 
