@@ -42,7 +42,7 @@ class PhoneRecordRepositoryImpl(ds: DataSource) extends PhoneRecordRepository {
       .provide(dsLayer)
 
   override def update(phoneRecord: PhoneRecord): Task[PhoneRecord] =
-    ctx.run(phoneReckordSchema.updateValue(lift(phoneRecord)).returning(v => v))
+    ctx.run(phoneReckordSchema.filter(_.id == lift(phoneRecord.id)).updateValue(lift(phoneRecord)).returning(v => v))
       .mapBoth(e => new Throwable(e.getMessage), r => r)
       .provide(dsLayer)
 

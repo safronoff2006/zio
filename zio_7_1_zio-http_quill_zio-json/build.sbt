@@ -13,22 +13,29 @@
      Compile / run / mainClass := Option("ru.lesson.MainApp"),
      testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"),
      libraryDependencies ++= Seq(
-       "org.scala-lang.modules" %% "scala-parser-combinators" % "2.3.0",
+       "org.scala-lang.modules" %% "scala-parser-combinators" % "2.4.0",
+       "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5",
+       "ch.qos.logback" % "logback-classic" % "1.5.6",
        "dev.zio" %% "zio" % "2.1.9",
        "dev.zio" %% "zio-streams" % "2.1.9",
-       "dev.zio" %% "zio-http" % "3.0.0-RC9",
+       "dev.zio" %% "zio-http" % "3.0.0",
        "dev.zio" %% "zio-json" % "0.7.3",
        "dev.zio" %% "zio-test"          % "2.1.9" % Test,
+       "dev.zio"       %% "zio-http-testkit" % "3.0.0-RC8" % Test,
        "dev.zio" %% "zio-test-sbt"      % "2.1.9" % Test,
        "dev.zio" %% "zio-test-magnolia" % "2.1.9" % Test,
+       "io.getquill"          %% "quill-zio"        % "4.8.4",
        "io.getquill"          %% "quill-jdbc-zio" % "4.8.4",
        "org.postgresql"       %  "postgresql"     % "42.7.3",
-       "ch.qos.logback" % "logback-classic" % "1.5.6"
+       "dev.zio"       %% "zio-logging"       % "2.3.0",
+       "dev.zio"       %% "zio-logging-slf4j" % "2.2.4",
 
 
 
 
-     )
+
+     ),
+     resolvers ++= Resolver.sonatypeOssRepos("snapshots")
    )
 
 
