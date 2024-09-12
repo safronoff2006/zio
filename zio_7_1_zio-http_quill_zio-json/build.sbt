@@ -21,7 +21,7 @@
        "dev.zio" %% "zio-http" % "3.0.0",
        "dev.zio" %% "zio-json" % "0.7.3",
        "dev.zio" %% "zio-test"          % "2.1.9" % Test,
-       "dev.zio"       %% "zio-http-testkit" % "3.0.0-RC8" % Test,
+       "dev.zio"       %% "zio-http-testkit" % "3.0.0" % Test,
        "dev.zio" %% "zio-test-sbt"      % "2.1.9" % Test,
        "dev.zio" %% "zio-test-magnolia" % "2.1.9" % Test,
        "io.getquill"          %% "quill-zio"        % "4.8.4",
