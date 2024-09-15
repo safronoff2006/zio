@@ -84,6 +84,6 @@ object UserRoutes {
         )
       } @@ logAnnotateCorrelationId(req) @@ logSpan("get-users")
       }
-    ) @@ LogAspect.logAnnotateCorrelationId
+    ) @@ logAnnotateCorrelationId
 
 }
