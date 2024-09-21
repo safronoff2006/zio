@@ -7,6 +7,7 @@ import zio._
 import zio.stream.ZStream
 
 import scala.io.Source
+import ru.lesson.text_processing.pipelines._
 
 case class TextProcessingConfigured(conf: FilesConfig) extends TextProcessing {
 
@@ -29,7 +30,7 @@ case class TextProcessingConfigured(conf: FilesConfig) extends TextProcessing {
   override def streamFile: ZStream[Any, Throwable, String] =
     ZStream.fromIteratorScoped(
       source(conf.bookPath) map (_.getLines())
-    ) via br
+    ) via  split >>> toObj >>> merg >>> merg >>> merg >>> merg  >>> toDebug
 
 }
 

@@ -1,6 +1,7 @@
 package ru.lesson.text_processing.impls.test
 
 import ru.lesson.text_processing.TextProcessing
+import ru.lesson.text_processing.pipelines._
 import ru.lesson.utils.files.UtilsFiles.{FileAutoCloseableLayer, FileLayer, source, sourceAutoCloseable}
 import zio.stream.ZStream
 import zio.{Scope, Task, TaskLayer, ZLayer}
@@ -23,21 +24,21 @@ case class TextProcessingTest() extends TextProcessing {
   }
 
 
+  override def streamFile =
 
-  override def streamFile: ZStream[Any, Throwable, String] =
     ZStream.fromIteratorScoped(
       source(HandConf.path) map (_.getLines())
-    ) via br
-}
-
-object TextProcessingTest {
-  val sourceTaskLayer: TaskLayer[Source] = FileLayer apply HandConf.path
-  val sourceAutoCLoseableTaskLayer: TaskLayer[Source] = FileAutoCloseableLayer apply HandConf.path
-
-  val layer: TaskLayer[TextProcessingTest] =
-    sourceTaskLayer >>> ZLayer.succeed(TextProcessingTest())
-
-  val layerAutoCloseable: TaskLayer[TextProcessingTest] =
-    sourceAutoCLoseableTaskLayer >>> ZLayer.succeed(TextProcessingTest())
+    ) via split >>> toObj >>> merg10 >>> toDebug
 
 }
+  object TextProcessingTest {
+    val sourceTaskLayer: TaskLayer[Source] = FileLayer apply HandConf.path
+    val sourceAutoCLoseableTaskLayer: TaskLayer[Source] = FileAutoCloseableLayer apply HandConf.path
+
+    val layer: TaskLayer[TextProcessingTest] =
+      sourceTaskLayer >>> ZLayer.succeed(TextProcessingTest())
+
+    val layerAutoCloseable: TaskLayer[TextProcessingTest] =
+      sourceAutoCLoseableTaskLayer >>> ZLayer.succeed(TextProcessingTest())
+
+  }

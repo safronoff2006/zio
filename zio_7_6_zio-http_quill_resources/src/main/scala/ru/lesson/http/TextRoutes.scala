@@ -27,8 +27,10 @@ object TextRoutes {
           Response(
             status = Status.Ok,
             headers = Headers(
-              Header.ContentType(MediaType.application.`octet-stream`),
-              Header.ContentDisposition.attachment("efef")
+              //Header.ContentType(MediaType.application.`octet-stream`),
+             // Header.ContentDisposition.attachment("efef")
+              //Header.ContentType(MediaType.application.`octet-stream`),
+              Header.ContentType(MediaType.text.plain, charset = Some(Charsets.Utf8)),
             ),
             body = Body.fromCharSequenceStreamChunked(stream)
           )
