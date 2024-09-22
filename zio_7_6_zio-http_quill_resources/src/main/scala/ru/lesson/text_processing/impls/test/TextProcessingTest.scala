@@ -4,12 +4,13 @@ import ru.lesson.text_processing.TextProcessing
 import ru.lesson.text_processing.pipelines._
 import ru.lesson.utils.files.UtilsFiles.{FileAutoCloseableLayer, FileLayer, source, sourceAutoCloseable}
 import zio.stream.ZStream
-import zio.{Scope, Task, TaskLayer, ZLayer}
+import zio.{Scope, Task, TaskLayer, ZIO, ZLayer}
 
 import scala.io.Source
 
 object HandConf {
   val path  = "src/main/resources/test.txt"
+  val repeatBr = 2
 }
 
 case class TextProcessingTest() extends TextProcessing {
@@ -23,14 +24,21 @@ case class TextProcessingTest() extends TextProcessing {
     ).provide(Scope.default)
   }
 
+  val countLines: ZIO[Any, Throwable, Long] = ZStream.fromIteratorScoped(source(HandConf.path) map(_.getLines)).runCount
 
-  override def streamFile =
+  val brRepeat: ZStream[Any, Throwable, String] = ZStream.fromZIO(countLines) flatMap { count => ZStream.repeat("\n").take(HandConf.repeatBr * count) }
 
-    ZStream.fromIteratorScoped(
-      source(HandConf.path) map (_.getLines())
-    ) via split >>> toObj >>> merg10 >>> toDebug
+
+
+  override def streamFile  =
+
+    (  ZStream.fromIteratorScoped(source(HandConf.path) map (_.getLines())) ++
+    brRepeat ) via split >>> toObj >>> merg10 >>> toDebug
 
 }
+
+
+
   object TextProcessingTest {
     val sourceTaskLayer: TaskLayer[Source] = FileLayer apply HandConf.path
     val sourceAutoCLoseableTaskLayer: TaskLayer[Source] = FileAutoCloseableLayer apply HandConf.path

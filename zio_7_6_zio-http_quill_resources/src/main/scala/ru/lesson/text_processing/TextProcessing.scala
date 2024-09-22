@@ -6,6 +6,7 @@ import zio.stream.ZPipeline.mapAccum
 import zio.stream.{ZPipeline, ZStream}
 
 import scala.util.{Failure, Success, Try}
+import ru.lesson.utils.strings._
 
 @accessible[TextProcessing]
 trait TextProcessing {
@@ -19,13 +20,13 @@ trait TextProcessing {
 
 object pipelines {
 
-  final case class TextStr(value: String)
+  final case class TextStr(value: String = "", dictionaryWordsCount: Long = 0)
 
   object TextStr {
     def apply(v: String): TextStr = new TextStr(v)
   }
 
-  val br = ZPipeline.map[String, String](_ + "\n")
+  val br: ZPipeline[Any, Nothing, String, String] = ZPipeline.map[String, String](_ + "\n")
 
   val insideBr: ZPipeline[Any, Nothing, TextStr, TextStr] = ZPipeline.map[TextStr, TextStr](ts => ts.copy(value = ts.value + "\n"))
 
@@ -33,11 +34,15 @@ object pipelines {
     ZPipeline.splitLines >>>
     ZPipeline.map[String, String](_.trim)
 
-  val toObj = ZPipeline.map[String, TextStr](TextStr(_))
+  val toObj: ZPipeline[Any, Nothing, String, TextStr] = ZPipeline.map[String, TextStr](TextStr(_))
 
-  val toDebug = ZPipeline.map[TextStr, String](_.toString + "\n")
+  val parContainCount = ZPipeline.mapZIOPar[Any, Throwable, TextStr, TextStr](10,100){tstr =>
+    ZIO.attempt(tstr.copy(dictionaryWordsCount = Inclusions.contain("один".toLowerCase,tstr.value.toLowerCase)))
+  }
 
-  val toView = ZPipeline.map[TextStr, String](_.value)
+  val toDebug: ZPipeline[Any, Nothing, TextStr, String] = ZPipeline.map[TextStr, String](_.toString + "\n")
+
+  val toView: ZPipeline[Any, Nothing, TextStr, String] = ZPipeline.map[TextStr, String](_.value)
 
   def mergF(acc: TextStr, next: TextStr): (TextStr, TextStr) = {
     def firstIsLowercase(str: String): Boolean = Try(str(0)) match {
@@ -57,16 +62,18 @@ object pipelines {
 
   val notEmptyFilter: ZPipeline[Any, Nothing, TextStr, TextStr] = ZPipeline.filter[TextStr](_.value.nonEmpty)
 
-  val merg10: ZPipeline[Any, Nothing, TextStr, TextStr] =
-    merg >>>
-      merg >>>
-      merg >>>
-      merg >>>
-      merg >>>
-      merg >>>
-      merg >>>
-      merg >>>
-      merg >>> notEmptyFilter
+  val addEmpty: ZPipeline[Any, Nothing, TextStr, Chunk[TextStr]] = ZPipeline.map[TextStr, Chunk[TextStr]](Chunk(_))
+
+  val flat: ZPipeline[Any, Nothing, Chunk[TextStr], TextStr] = ZPipeline.flattenChunks[TextStr]
+
+  val merg10: ZPipeline[Any, Throwable, TextStr, TextStr] =
+      merg >>> merg >>> merg >>> merg >>> merg >>>
+      merg >>> merg >>> merg >>> merg >>> merg >>> notEmptyFilter >>> parContainCount
+
+
+
+
+
 }
 
 
