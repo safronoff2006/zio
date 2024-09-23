@@ -3,7 +3,7 @@ package ru.lesson
 import ru.lesson.config.FilesConfig
 import ru.lesson.files.FilesServiceImpl
 import ru.lesson.http.{FilesRoutes, PhoneBookRoutes, PhoneRecordRepository, TextRoutes}
-import ru.lesson.text_processing.impls.test.TextProcessingTest
+import ru.lesson.text_processing.impls.configured.TextProcessingConfigured
 import zio._
 import zio.config.typesafe._
 import zio.http._
@@ -29,7 +29,7 @@ object MainApp extends ZIOAppDefault {
       Server.default,
       PhoneRecordRepository.layer,
       FilesServiceImpl.layer,
-      TextProcessingTest.layer,
+      TextProcessingConfigured.layer,
       FilesConfig.layer
     )
   }

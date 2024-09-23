@@ -26,5 +26,5 @@ case class FilesServiceImpl(fileConfig: FilesConfig) extends FilesService {
 }
 
 object FilesServiceImpl {
-  val layer: ZLayer[Any, Config.Error, FilesService] = FilesConfig.layer >>>  ZLayer.fromFunction(FilesServiceImpl(_))
+  val layer = ZLayer.fromFunction(FilesServiceImpl(_))
 }

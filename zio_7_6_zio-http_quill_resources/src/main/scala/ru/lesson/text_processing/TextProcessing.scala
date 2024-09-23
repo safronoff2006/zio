@@ -1,12 +1,12 @@
 package ru.lesson.text_processing
 
+import ru.lesson.utils.strings._
 import zio._
 import zio.macros.accessible
 import zio.stream.ZPipeline.mapAccum
 import zio.stream.{ZPipeline, ZStream}
 
 import scala.util.{Failure, Success, Try}
-import ru.lesson.utils.strings._
 
 @accessible[TextProcessing]
 trait TextProcessing {
@@ -17,6 +17,8 @@ trait TextProcessing {
   def streamFile: ZStream[Any, Throwable, String]
 
 }
+
+
 
 object pipelines {
 
@@ -35,10 +37,6 @@ object pipelines {
     ZPipeline.map[String, String](_.trim)
 
   val toObj: ZPipeline[Any, Nothing, String, TextStr] = ZPipeline.map[String, TextStr](TextStr(_))
-
-  val parContainCount = ZPipeline.mapZIOPar[Any, Throwable, TextStr, TextStr](10,100){tstr =>
-    ZIO.attempt(tstr.copy(dictionaryWordsCount = Inclusions.contain("один".toLowerCase,tstr.value.toLowerCase)))
-  }
 
   val toDebug: ZPipeline[Any, Nothing, TextStr, String] = ZPipeline.map[TextStr, String](_.toString + "\n")
 
@@ -66,9 +64,11 @@ object pipelines {
 
   val flat: ZPipeline[Any, Nothing, Chunk[TextStr], TextStr] = ZPipeline.flattenChunks[TextStr]
 
+
+
   val merg10: ZPipeline[Any, Throwable, TextStr, TextStr] =
       merg >>> merg >>> merg >>> merg >>> merg >>>
-      merg >>> merg >>> merg >>> merg >>> merg >>> notEmptyFilter >>> parContainCount
+      merg >>> merg >>> merg >>> merg >>> merg >>> notEmptyFilter
 
 
 
