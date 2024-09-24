@@ -22,23 +22,22 @@ trait TextProcessing {
 
 object pipelines {
 
-  final case class TextStr(value: String = "", dictionaryWordsCount: Long = 0)
+  final case class TextStr(value: String = "", dict: Chunk[String] = Chunk.empty, dictionaryWordsCount: Long = 0 )
 
   object TextStr {
-    def apply(v: String): TextStr = new TextStr(v)
+    def apply(v: String, dict: Chunk[String]): TextStr = new TextStr(v, dict)
   }
 
-  val br: ZPipeline[Any, Nothing, String, String] = ZPipeline.map[String, String](_ + "\n")
 
-  val insideBr: ZPipeline[Any, Nothing, TextStr, TextStr] = ZPipeline.map[TextStr, TextStr](ts => ts.copy(value = ts.value + "\n"))
+
 
   val split: ZPipeline[Any, Nothing, String, String] = ZPipeline.map[String, String](str => (str + "\n").replace(". ", ".\n")) >>>
     ZPipeline.splitLines >>>
     ZPipeline.map[String, String](_.trim)
 
-  val toObj: ZPipeline[Any, Nothing, String, TextStr] = ZPipeline.map[String, TextStr](TextStr(_))
+  val toObj: ZPipeline[Any, Nothing, (String, Chunk[String]), TextStr] = ZPipeline.map[(String, Chunk[String]), TextStr]( par => TextStr(par._1, par._2))
 
-  val toDebug: ZPipeline[Any, Nothing, TextStr, String] = ZPipeline.map[TextStr, String](_.toString + "\n")
+  val toDebug: ZPipeline[Any, Nothing, TextStr, String] = ZPipeline.map[TextStr, String](ts => ts.value + "  _  " + ts.dictionaryWordsCount + "\n")
 
   val toView: ZPipeline[Any, Nothing, TextStr, String] = ZPipeline.map[TextStr, String](_.value)
 
@@ -50,20 +49,16 @@ object pipelines {
 
     val a = acc.value
     val n = next.value
+    val dict = next.dict
 
-    if (firstIsLowercase(n)) (TextStr apply "") -> (TextStr apply a + n) else (TextStr apply n) -> (TextStr apply a)
+    if (firstIsLowercase(n)) TextStr.apply("",dict) -> TextStr.apply(a + n,dict) else TextStr.apply(n,dict) -> TextStr.apply(a, dict)
 
   }
 
-  val merg: ZPipeline[Any, Nothing, TextStr, TextStr] = mapAccum(TextStr apply "")((acc, next) => (mergF(acc, next)._1, mergF(acc, next)._2))
+  val merg: ZPipeline[Any, Nothing, TextStr, TextStr] = mapAccum(TextStr.apply( "",Chunk.empty))((acc, next) => (mergF(acc, next)._1, mergF(acc, next)._2))
 
 
-  val notEmptyFilter: ZPipeline[Any, Nothing, TextStr, TextStr] = ZPipeline.filter[TextStr](_.value.nonEmpty)
-
-  val addEmpty: ZPipeline[Any, Nothing, TextStr, Chunk[TextStr]] = ZPipeline.map[TextStr, Chunk[TextStr]](Chunk(_))
-
-  val flat: ZPipeline[Any, Nothing, Chunk[TextStr], TextStr] = ZPipeline.flattenChunks[TextStr]
-
+  val notEmptyFilter: ZPipeline[Any, Nothing, TextStr, TextStr] = ZPipeline.filter[TextStr](!_.value.isBlank)
 
 
   val merg10: ZPipeline[Any, Throwable, TextStr, TextStr] =
