@@ -43,9 +43,10 @@ case class TextProcessingTest() extends TextProcessing {
     ).provide(Scope.default)
   }
 
+
   val countLines: ZIO[Any, Throwable, Long] = ZStream.fromIteratorScoped(source(path) map (_.getLines)).runCount
 
-  val brRepeat: ZStream[Any, Throwable, (String, Chunk[String])] = ZStream.fromZIO(countLines) flatMap { count => ZStream.repeat("\n").take(repeatBr * count).map(str => str -> Chunk.empty ) }
+  val brRepeat: ZStream[Any, Throwable, (String, Chunk[String])] = ZStream.fromZIO(countLines) flatMap { count => ZStream.repeat("\n").take(repeatBr * count).map(str => str -> Chunk.empty) }
 
   def includesInDictionary(list: Chunk[String], str: String): ZIO[Any, Nothing, Long] = ZIO.succeed(list.foldLeft(0L) { (acc, world) =>
     acc + Inclusions.contain(world.toLowerCase, str.toLowerCase)
@@ -60,19 +61,22 @@ case class TextProcessingTest() extends TextProcessing {
       count <- includesInDictionaryZio(tstr.value.toLowerCase, tstr.dict)
       ts <- ZIO.succeed(tstr)
       newts <- ZIO.succeed(ts.copy(dictionaryWordsCount = count))
-    } yield(newts)
+    } yield (newts)
   }
 
 
   override def streamFile: ZStream[Any, Throwable, String] = for {
-    chankString <-ZStream.fromZIO(ChunkString.make)
+    chankString <- ZStream.fromZIO(ChunkString.make)
     dict <- ZStream.fromZIO(chankString.value.get)
+    _ <- ZStream.fromZIO(printLine(s"Dict  $dict"))
     stream <- (ZStream.fromIteratorScoped(source(path) map (source => source.getLines()))
-      .via (ZPipeline.splitLines)
-      .map(fileStr => fileStr -> dict) ++
-      brRepeat) via toObj >>> merg10 >>> notEmptyFilter >>> parContainCount >>> toDebug
-  } yield stream
+      .via(split)
+      .map(fileStr => fileStr -> dict)
+      ++ brRepeat)
+      .via(toObj >>> merg10 >>> notEmptyFilter >>> parContainCount >>> toDebug)
 
+
+  } yield stream
 }
 
 

@@ -2,53 +2,54 @@ package ru.lesson.text_processing.impls.configured
 
 import ru.lesson.config.FilesConfig
 import ru.lesson.text_processing.TextProcessing
-import ru.lesson.text_processing.impls.configured.HandConf.{buffer, concurrency, repeatBr}
 import ru.lesson.text_processing.pipelines._
 import ru.lesson.utils.files.UtilsFiles._
 import ru.lesson.utils.strings.Inclusions
-import zio.Console.printLine
 import zio._
 import zio.stream.{ZPipeline, ZStream}
 
 import scala.io.Source
 
-object HandConf {
-
-  val repeatBr = 2
-  val concurrency = 2
-  val buffer = 2
-}
 
 
 case class TextProcessingConfigured(conf: FilesConfig) extends TextProcessing {
 
   private val path: String = conf.bookPath
   private val dictPath: String = conf.dictPath
+  private val repeatBr: Int =  conf.repeatBr
+  private val concurrency: Int = conf.concurrency
+  private val buffer: Int = conf.buffer
 
   case class ChunkString(value: Ref[Chunk[String]]) {
     def get: UIO[Chunk[String]] = value.get
   }
 
   object ChunkString {
-    def make: Task[ChunkString] = ZIO.acquireReleaseWith(ZIO.attempt(Source.fromFile(dictPath)) <* printLine("The Dictionary was opened."))(
-      x => printLine("The Dictionary was closed.").orDie.as(x.close())) { source =>
-      Ref.make(Chunk.fromIterator(source.getLines())).map(ChunkString(_))
+    def make: Task[ChunkString] = ZIO.logSpan("make-chunk") {
+      ZIO.acquireReleaseWith(ZIO.attempt(Source.fromFile(dictPath)) <* ZIO.logInfo("The Dictionary was opened."))(
+        x => ZIO.logInfo("The Dictionary was closed.").as(x.close())) { source =>
+        Ref.make(Chunk.fromIterator(source.getLines())).map(ChunkString(_))
+      }
     }
   }
 
 
   override def readFile: Task[List[String]] = {
-    source(conf.bookPath).mapBoth(
-      err => new Throwable(err),
-      sr => sr.getLines().toList
-    ).provide(Scope.default)
+    ZIO.logSpan("read-file") {
+      source(conf.bookPath).mapBoth(
+        err => new Throwable(err),
+        sr => sr.getLines().toList
+      ) <* ZIO.logInfo("read File")
+    }.provide(Scope.default)
   }
 
   override def readAutoCloseableFile: Task[List[String]] = {
-    sourceAutoCloseable(conf.bookPath).mapBoth(
-      err => new Throwable(err),
-      sr => sr.getLines().toList
-    ).provide(Scope.default)
+    ZIO.logSpan("read-auto-closable-file") {
+      sourceAutoCloseable(conf.bookPath).mapBoth(
+        err => new Throwable(err),
+        sr => sr.getLines().toList
+      ) <* ZIO.logInfo("read auto clossable File")
+    }.provide(Scope.default)
   }
 
 
@@ -69,20 +70,19 @@ case class TextProcessingConfigured(conf: FilesConfig) extends TextProcessing {
       count <- includesInDictionaryZio(tstr.value.toLowerCase, tstr.dict)
       ts <- ZIO.succeed(tstr)
       newts <- ZIO.succeed(ts.copy(dictionaryWordsCount = count))
-    } yield (newts)
+    } yield newts
   }
 
 
   override def streamFile: ZStream[Any, Throwable, String] = for {
     chankString <- ZStream.fromZIO(ChunkString.make)
     dict <- ZStream.fromZIO(chankString.value.get)
-    _ <- ZStream.fromZIO(printLine(s"Dict  $dict"))
+    _ <- ZStream.fromZIO(ZIO.logInfo(s"Dict  $dict"))
     stream <- (ZStream.fromIteratorScoped(source(path) map (source => source.getLines()))
       .via(split)
       .map(fileStr => fileStr -> dict)
       ++ brRepeat)
-      .via(toObj >>> merg10 >>> notEmptyFilter >>> parContainCount >>> toDebug)
-
+      .via(toObj >>> merg10 >>> notEmptyFilter >>> parContainCount >>> toWeb >>> toJson)
 
   } yield stream
 

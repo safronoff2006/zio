@@ -1,10 +1,11 @@
 package ru.lesson.text_processing
 
-import ru.lesson.utils.strings._
+
 import zio._
 import zio.macros.accessible
 import zio.stream.ZPipeline.mapAccum
 import zio.stream.{ZPipeline, ZStream}
+import zio.json._
 
 import scala.util.{Failure, Success, Try}
 
@@ -22,13 +23,21 @@ trait TextProcessing {
 
 object pipelines {
 
-  final case class TextStr(value: String = "", dict: Chunk[String] = Chunk.empty, dictionaryWordsCount: Long = 0 )
+  final case class TextStr(
+                            value: String = "",
+                            dict: Chunk[String] = Chunk.empty,
+                            dictionaryWordsCount: Long = 0 )
 
   object TextStr {
     def apply(v: String, dict: Chunk[String]): TextStr = new TextStr(v, dict)
+
   }
 
 
+  @jsonDerive  case class TextWeb(
+                            value: String = "",
+                            dictionaryWordsCount: Long = 0
+                          )
 
 
   val split: ZPipeline[Any, Nothing, String, String] = ZPipeline.map[String, String](str => (str + "\n").replace(". ", ".\n")) >>>
@@ -66,6 +75,12 @@ object pipelines {
       merg >>> merg >>> merg >>> merg >>> merg >>> notEmptyFilter
 
 
+  val toWeb: ZPipeline[Any, Nothing, TextStr, TextWeb]
+  = ZPipeline.map[TextStr, TextWeb](ts => TextWeb(ts.value,ts.dictionaryWordsCount))
+
+  val toJson: ZPipeline[Any, Nothing, TextWeb, String] = ZPipeline.map[TextWeb, String](_.toJson).map(_ + "\n")
+    .intersperse(",")
+    .intersperse("[","","]")
 
 
 
