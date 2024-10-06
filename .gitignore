@@ -3,6 +3,6 @@
 /zio*/target/
 /zio*/project/
 *mv.db
-*.log
+*.log*
 
 

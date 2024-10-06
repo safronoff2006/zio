@@ -1,14 +1,15 @@
 package ru.lesson.text_processing.impls.test
 
+import ru.lesson.config.FilesConfig
 import ru.lesson.text_processing.TextProcessing
-
 import ru.lesson.text_processing.pipelines._
 import ru.lesson.utils.files.UtilsFiles.{source, sourceAutoCloseable}
-import ru.lesson.utils.strings.Inclusions
 import zio.Console.printLine
+import zio.cache.{Cache, Lookup}
 import zio.stream.{ZPipeline, ZStream}
-import zio.{Chunk, Ref, Scope, Task, TaskLayer, UIO, ZIO, ZLayer}
+import zio.{Chunk, Duration, Ref, Scope, Task, UIO, ZIO, ZLayer}
 
+import scala.annotation.unused
 import scala.io.Source
 
 object HandConf {
@@ -19,7 +20,7 @@ object HandConf {
   val dictPath = "src/main/resources/dictionary.txt"
 }
 
-case class TextProcessingTest() extends TextProcessing {
+case class TextProcessingTest(dict: Chunk[String]) extends TextProcessing {
   import HandConf._
 
 
@@ -44,43 +45,41 @@ case class TextProcessingTest() extends TextProcessing {
   }
 
 
-  val countLines: ZIO[Any, Throwable, Long] = ZStream.fromIteratorScoped(source(path) map (_.getLines)).runCount
-
-  val brRepeat: ZStream[Any, Throwable, (String, Chunk[String])] = ZStream.fromZIO(countLines) flatMap { count => ZStream.repeat("\n").take(repeatBr * count).map(str => str -> Chunk.empty) }
-
-  def includesInDictionary(list: Chunk[String], str: String): ZIO[Any, Nothing, Long] = ZIO.succeed(list.foldLeft(0L) { (acc, world) =>
-    acc + Inclusions.contain(world.toLowerCase, str.toLowerCase)
-  })
-
-  def includesInDictionaryZio(str: String, dict: Chunk[String]): ZIO[Any, Throwable, Long] = for {
-    includesIn <- includesInDictionary(dict, str)
-  } yield includesIn
-
   val parContainCount: ZPipeline[Any, Throwable, TextStr, TextStr] = ZPipeline.mapZIOPar[Any, Throwable, TextStr, TextStr](concurrency, buffer) { tstr =>
     for {
-      count <- includesInDictionaryZio(tstr.value.toLowerCase, tstr.dict)
+      count <- includesInDictionaryZio(tstr.value.toLowerCase, dict)
       ts <- ZIO.succeed(tstr)
       newts <- ZIO.succeed(ts.copy(dictionaryWordsCount = count))
-    } yield (newts)
+    } yield newts
   }
 
 
   override def streamFile: ZStream[Any, Throwable, String] = for {
-    chankString <- ZStream.fromZIO(ChunkString.make)
-    dict <- ZStream.fromZIO(chankString.value.get)
-    _ <- ZStream.fromZIO(printLine(s"Dict  $dict"))
-    stream <- (ZStream.fromIteratorScoped(source(path) map (source => source.getLines()))
-      .via(split)
-      .map(fileStr => fileStr -> dict)
-      ++ brRepeat)
+    stream <- (ZStream.fromIteratorScoped(source(path) map (source => source.getLines())).via(split) ++ brRepeat(path, repeatBr))
       .via(toObj >>> merg10 >>> notEmptyFilter >>> parContainCount >>> toDebug)
-
-
   } yield stream
 }
 
 
 
+  @unused
   object TextProcessingTest {
-    val layer: TaskLayer[TextProcessingTest] = ZLayer.succeed(TextProcessingTest())
+
+    import ru.lesson.text_processing.DictionaryCached._
+
+    val layer: ZLayer[FilesConfig, Throwable, TextProcessingTest] = ZLayer {
+      for {
+
+        cache <- Cache.make(
+          capacity = 100,
+          timeToLive = Duration.Infinity,
+          lookup = Lookup(getDictionary)
+        )
+
+        config <- ZIO.service[FilesConfig]
+        dict <- cache.get(config.dictPath)
+
+      } yield TextProcessingTest(dict)
+
+    }
   }

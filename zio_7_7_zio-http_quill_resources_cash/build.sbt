@@ -15,7 +15,7 @@ lazy val root = (project in file(".")).
     libraryDependencies ++= Seq(
       "org.scala-lang.modules" %% "scala-parser-combinators" % "2.4.0",
       "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5",
-      "ch.qos.logback" % "logback-classic" % "1.5.6",
+     // "ch.qos.logback" % "logback-classic" % "1.5.6",
       "dev.zio" %% "zio" % "2.1.9",
       "dev.zio" %% "zio-streams" % "2.1.9",
       "dev.zio" %% "zio-macros" % "2.1.9",
@@ -35,6 +35,7 @@ lazy val root = (project in file(".")).
       "org.postgresql" % "postgresql" % "42.7.3",
       "dev.zio" %% "zio-logging" % "2.3.0",
       "dev.zio" %% "zio-logging-slf4j" % "2.2.4",
+      "org.slf4j" % "slf4j-log4j12" % "2.1.0-alpha1"
 
 
     ),

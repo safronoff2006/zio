@@ -4,11 +4,11 @@ import ru.lesson.config.FilesConfig
 import ru.lesson.text_processing.TextProcessing
 import ru.lesson.text_processing.pipelines._
 import ru.lesson.utils.files.UtilsFiles._
-import ru.lesson.utils.strings.Inclusions
 import zio._
 import zio.cache.{Cache, Lookup}
 import zio.stream.{ZPipeline, ZStream}
 
+import scala.annotation.unused
 import scala.io.Source
 
 
@@ -53,26 +53,9 @@ case class TextProcessingConfigured(conf: FilesConfig, dict: Chunk[String]) exte
   }
 
 
-  val countLines: ZIO[Any, Throwable, Long] = ZStream.fromIteratorScoped(source(path) map (_.getLines)).runCount
-
-  val brRepeat: ZStream[Any, Throwable, (String, Chunk[String])] = ZStream.fromZIO(countLines) flatMap { count => ZStream.repeat("\n").take(repeatBr * count).map(str => str -> Chunk.empty) }
-
-  def includesInDictionary(list: Chunk[String], str: String): ZIO[Any, Nothing, Long] = ZIO.succeed(list.foldLeft(0L) { (acc, world) =>
-    acc + Inclusions.contain(world.toLowerCase, str.toLowerCase)
-  })
-
-  def includesInDictionaryZio(str: String, dict: Chunk[String]): ZIO[Any, Throwable, Long] = for {
-    includesIn <- includesInDictionary(dict, str)
-  } yield includesIn
-
-
   val parContainCount: ZPipeline[Any, Throwable, TextStr, TextStr] =
-    ZPipeline.mapZIOPar[Any, Throwable, TextStr, TextStr](concurrency, buffer) {
-
-
-      tstr =>
+    ZPipeline.mapZIOPar[Any, Throwable, TextStr, TextStr](concurrency, buffer) { tstr =>
         for {
-
           count <- includesInDictionaryZio(tstr.value.toLowerCase, dict)
           ts <- ZIO.succeed(tstr)
           newts <- ZIO.succeed(ts.copy(dictionaryWordsCount = count))
@@ -81,28 +64,18 @@ case class TextProcessingConfigured(conf: FilesConfig, dict: Chunk[String]) exte
 
 
   override def streamFile: ZStream[Any, Throwable, String] = for {
-    stream <- (ZStream.fromIteratorScoped(source(path) map (source => source.getLines()))
-      .via(split)
-      .map(fileStr => fileStr -> Chunk.empty[String])
-      ++ brRepeat)
+    stream <- (ZStream.fromIteratorScoped(source(path) map (source => source.getLines())).via(split) ++ brRepeat(path, repeatBr))
       .via(toObj >>> merg10 >>> notEmptyFilter >>> parContainCount >>> toWeb >>> toJson)
-
   } yield stream
 
 
 }
 
-object DictionaryCached {
-  def getDictionary(key: String): Task[Chunk[String]] =
-    ZIO.logSpan("dictionary") {
-      ZIO.acquireReleaseWith(ZIO.attempt(Source.fromFile(key)) <* ZIO.logInfo("The Dictionary was opened."))(
-        x => ZIO.logInfo("The Dictionary was closed.").as(x.close())) { source => ZIO.attempt(Chunk.fromIterator(source.getLines()))}
-    }
-}
 
+@unused
 object TextProcessingConfigured {
 
-  import DictionaryCached._
+  import ru.lesson.text_processing.DictionaryCached._
 
   val layer: ZLayer[FilesConfig, Throwable, TextProcessing] = ZLayer {
     for {
@@ -115,9 +88,7 @@ object TextProcessingConfigured {
 
       config <- ZIO.service[FilesConfig]
       dict <- cache.get(config.dictPath)
-      _ <- cache.get(config.dictPath)
-      _ <- cache.get(config.dictPath)
-      _ <- cache.get(config.dictPath)
+
     } yield TextProcessingConfigured(config, dict)
   }
 }

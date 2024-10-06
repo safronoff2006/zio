@@ -17,14 +17,14 @@ object MainApp extends ZIOAppDefault {
         .fromResourcePath()
     )
 
-  object Hello {
+  private object Hello {
     def apply(): Routes[Any, Nothing] = Routes(
       Method.GET / "hello" -> Handler.text("Hello World")
     )
   }
 
 
-  override def run = {
+  override def run: ZIO[Any, Throwable, Nothing] = {
     Server.serve(PhoneBookRoutes() ++ Hello() ++ FilesRoutes() ++ TextRoutes()).provide(
       Server.default,
       PhoneRecordRepository.layer,
