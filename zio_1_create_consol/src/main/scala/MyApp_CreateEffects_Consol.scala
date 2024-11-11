@@ -10,7 +10,7 @@ object MyApp_CreateEffects_Consol extends ZIOAppDefault {
 
   def run: ZIO[Any, Throwable, Unit] = myAppLogic
 
-  private val myAppLogic = for {
+  private val myAppLogic: ZIO[Any, Throwable, Unit] = for {
     _   <- printLine("Изучаем ZIO")
     _   <- printLine("")
    // _   <- part1

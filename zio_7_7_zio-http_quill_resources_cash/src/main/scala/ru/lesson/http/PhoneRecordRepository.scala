@@ -38,7 +38,8 @@ class PhoneRecordRepositoryImpl(ds: DataSource) extends PhoneRecordRepository {
     ZIO.logSpan("list") {
       ZIO.logInfo("list method") *> ctx.run(phoneReckordSchema)
         .mapError(e => new Throwable(e.getMessage))
-    }.provide(dsLayer)
+    }
+      .provide(dsLayer)
 
   override def getBy(id: Long): Task[Option[PhoneRecord]] =
     ZIO.logSpan("get-by") {
@@ -57,8 +58,10 @@ class PhoneRecordRepositoryImpl(ds: DataSource) extends PhoneRecordRepository {
   override def update(phoneRecord: PhoneRecord): Task[PhoneRecord] =
     ZIO.logSpan("update") {
         ZIO.logInfo("update method") *> ctx.run(phoneReckordSchema.filter(_.id == lift(phoneRecord.id))
-            .updateValue(lift(phoneRecord)).returning(v => v))
-          .mapBoth(e => new Throwable(e.getMessage), r => r)
+            .updateValue(lift(phoneRecord))
+            .returning(v => v)
+          )
+          .mapBoth(e => new Throwable("Херня! "+ e.getMessage), r => r)
       }
       .provide(dsLayer)
 
@@ -66,7 +69,7 @@ class PhoneRecordRepositoryImpl(ds: DataSource) extends PhoneRecordRepository {
     ZIO.logSpan("delete") {
         ZIO.logInfo("delete method") *> ctx.run(phoneReckordSchema.filter(_.id == lift(id)).delete)
           .mapError(e => new Throwable(e.getMessage))
-          .unit
+         .unit
       }
       .provide(dsLayer)
 }

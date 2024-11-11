@@ -17,9 +17,11 @@ object TextRoutes {
           e => ZIO.fail(Response.internalServerError(e.getMessage)),
           list => ZIO.succeed(list)
         )
-        r <- ZIO.attemptBlocking(Response.json(list.toJson)).mapBoth(
-          err => Response.internalServerError(err.getMessage),
-          resp => resp
+        r <- ZIO.attemptBlocking(
+          Response.json(list.toJson))
+          .mapBoth(
+            err => Response.internalServerError(err.getMessage),
+            resp => resp
         )
       } yield r
     } @@ logAnnotateCorrelationId(req) @@ logSpan("get-text")

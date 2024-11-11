@@ -64,7 +64,11 @@ case class TextProcessingConfigured(conf: FilesConfig, dict: Chunk[String]) exte
 
 
   override def streamFile: ZStream[Any, Throwable, String] = for {
-    stream <- (ZStream.fromIteratorScoped(source(path) map (source => source.getLines())).via(split) ++ brRepeat(path, repeatBr))
+    stream <- (
+      ZStream.fromIteratorScoped(
+         source(path) map (source => source.getLines())
+        )
+      .via(split) ++ brRepeat(path, repeatBr))
       .via(toObj >>> merg10 >>> notEmptyFilter >>> parContainCount >>> toWeb >>> toJson)
   } yield stream
 

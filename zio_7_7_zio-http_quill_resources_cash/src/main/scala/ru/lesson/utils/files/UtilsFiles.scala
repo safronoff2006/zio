@@ -14,10 +14,10 @@ object UtilsFiles {
   }.refineToOrDie[IOException]
 
 
-  private def acquire(name: => String): ZIO[Any, IOException, Source] = ZIO.logSpan("acquire") {
+  private def acquire(name: => String): IO[IOException, Source] = ZIO.logSpan("acquire") {
     ZIO.logInfo("called acquire") *> ZIO.attemptBlockingIO(Source.fromFile(name))}
 
-  private def release(source: => Source): ZIO[Any, Nothing, Unit] =  ZIO.logSpan("release") {
+  private def release(source: => Source): UIO[Unit] =  ZIO.logSpan("release") {
     ZIO.logInfo("called release") *> ZIO.succeedBlocking(source.close())}
 
   def source(name: => String): ZIO[Scope, IOException, Source] =  ZIO.logSpan("source") {
